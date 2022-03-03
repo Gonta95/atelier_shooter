@@ -17,6 +17,11 @@ function math.angle(x1,y1, x2,y2) return math.atan2(y2-y1, x2-x1) end
 sonShoot = love.audio.newSource("sons/shoot.wav", "static")
 sonExplode = love.audio.newSource("sons/explode_touch.wav", "static")
 
+imgMenu = love.graphics.newImage("images/menu.jpg")
+imgGameOver = love.graphics.newImage("images/gameover.jpg")
+
+-- Ecran courant
+ecran_courant = "menu"
 
 heros = {}
 
@@ -178,7 +183,7 @@ function DemarreJeu()
   
   heros.x = largeur/2
   heros.y = hauteur - heros.h *2
-  
+  heros.energie = 3
 
   local ligne = 4
   CreeAlien(1, largeur/2, -(64/2) - (64*(ligne-1)))
@@ -194,7 +199,8 @@ function DemarreJeu()
   
 end
 
-function love.update(dt)
+function updateJeu()
+  
   
   camera.y = camera.y + camera.v
   
@@ -209,8 +215,12 @@ function love.update(dt)
     if tir.type == "alien" then
       if collide(heros, tir) then
         print("Boom je suis touché!!")
+        heros.energie = heros.energie - 1
         tir.supprime = true
         table.remove(liste_tirs,n)
+        if heros.energie <= 0 then
+          ecran_courant = "gameover"
+        end
       end
     end
     
@@ -221,7 +231,6 @@ function love.update(dt)
      for nAlien=#liste_aliens,1,-1 do
       local alien = liste_aliens[nAlien]
         if collide(tir, alien) then
-          
           tir.supprime = true
           table.remove(liste_tirs,n)
           alien.energie = alien.energie - 1
@@ -234,15 +243,10 @@ function love.update(dt)
       end
   end
   
-     
-    
-    
-    
-    
-    
-    
-    
-     if tir.y > hauteur or tir.y < 0 then
+  --Verifie si le tir est soti de l'écran
+    if (tir.y > hauteur or tir.y < 0) and tir.supprime == false then
+      
+      --Marque le sprite pour le supprimer plus tard
       tir.supprime = true
       table.remove(liste_tirs,n)
     end
@@ -313,9 +317,23 @@ function love.update(dt)
 
 end
 
-function love.draw()
 
-    
+
+
+
+function updateMenu()
+end
+
+function love.update(dt)
+  
+  if ecran_courant == "jeu" then
+    updateJeu()
+  elseif ecran_courant == "menu" then
+    updateMenu()
+  end
+end
+
+function drawJeu()
   local ligne,colonne
   local nbLignes =#niveau
   local x,y
@@ -347,12 +365,39 @@ function love.draw()
   
   
   love.graphics.print("Nombre de sprites = "..#liste_sprites.."  Nombre de tirs = "..#liste_tirs.." Nombre d'aliens = "..#liste_aliens, 0,0)
+end
+
+
+
+function drawGameOver()
+  love.graphics.draw(imgGameOver,0,0)
+end
+
+function drawMenu()
+  love.graphics.draw(imgMenu,0,0)
+end
+
+function love.draw()
   
+  if ecran_courant == "jeu" then
+    drawJeu()
+  elseif ecran_courant == "menu" then
+    drawMenu()
+  elseif ecran_courant == "gameover" then
+    drawGameOver()
+  end
 end
 
 function love.keypressed(key)
-  if key == "space" then
-    CreeTir("heros","laser1", heros.x , heros.y - heros.h, 0, -10)
+  
+  if ecran_courant == "jeu" then
+    if key == "space" then
+      CreeTir("heros","laser1", heros.x , heros.y - heros.h, 0, -10)
+    end
+  elseif ecran_courant == "menu" then
+    if key == "space" then
+      ecran_courant = "jeu"
+    end
   end
 end
   
